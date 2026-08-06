@@ -40,7 +40,7 @@ jobs:
           zip -qry LocalSend-iOS26.ipa Payload
 
       - name: Upload IPA
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: LocalSend-iOS26-unsigned
           path: app/dist/LocalSend-iOS26.ipa
