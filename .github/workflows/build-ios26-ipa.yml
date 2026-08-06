@@ -1,0 +1,48 @@
+name: Build iOS 26 IPA
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: macos-26
+    timeout-minutes: 60
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v6
+
+      - name: Install pinned Flutter SDK
+        run: |
+          git clone --depth 1 --branch 3.41.9 https://github.com/flutter/flutter.git "$RUNNER_TEMP/flutter"
+          echo "$RUNNER_TEMP/flutter/bin" >> "$GITHUB_PATH"
+
+      - name: Prepare dependencies
+        working-directory: app
+        run: |
+          flutter config --no-analytics
+          flutter precache --ios
+          flutter pub get
+
+      - name: Build unsigned iPhone app
+        working-directory: app
+        run: flutter build ios --release --no-codesign
+
+      - name: Package unsigned IPA for sideload signing
+        working-directory: app
+        run: |
+          mkdir -p dist/Payload
+          cp -R build/ios/iphoneos/Runner.app dist/Payload/
+          cd dist
+          zip -qry LocalSend-iOS26.ipa Payload
+
+      - name: Upload IPA
+        uses: actions/upload-artifact@v6
+        with:
+          name: LocalSend-iOS26-unsigned
+          path: app/dist/LocalSend-iOS26.ipa
+          if-no-files-found: error
+
